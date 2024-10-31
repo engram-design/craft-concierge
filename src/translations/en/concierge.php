@@ -15,4 +15,14 @@ return [
     "Someone registered on {{ siteName }}. \n\n" .
     "Visit {{ cpUrl('users') }} to review.",
 
+  'Concierge' => 'Concierge',
+  'General Settings' => 'General Settings',
+  'Moderator User Group' => 'Moderator User Group',
+  'None' => 'None',
+  'Select the user group for moderators. Each user in this group will receive moderator emails.' => 'Select the user group for moderators. Each user in this group will receive moderator emails.',
+  'Send Account Activation Email' => 'Send Account Activation Email',
+  'Send Moderator Account Registration Email' => 'Send Moderator Account Registration Email',
+  'Settings' => 'Settings',
+  'Whether to send an email to moderators when a user has registered. See [System Messages]({link}) to edit.' => 'Whether to send an email to moderators when a user has registered. See [System Messages]({link}) to edit.',
+  'Whether to send an email to the user when their account is activated. See [System Messages]({link}) to edit.' => 'Whether to send an email to the user when their account is activated. See [System Messages]({link}) to edit.',
 ];
