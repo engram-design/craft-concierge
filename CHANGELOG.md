@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.0.0 - 2024-10-31
+
+### Changed
+- Now requires Craft 5.0+.
+
 ## 3.0.0 - 2024-10-31
 > {note} The plugin’s package name has changed to `verbb/concierge`. Squeeze will need be updated to 3.0 from a terminal, by running `composer require verbb/concierge && composer remove olivierbon/craft-concierge`.
 
