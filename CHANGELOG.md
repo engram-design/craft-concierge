@@ -1,5 +1,10 @@
 # Changelog
 
+## 4.0.1 - 2024-11-01
+
+### Fixed
+- Fix moderator emails.
+
 ## 4.0.0 - 2024-10-31
 
 ### Changed
