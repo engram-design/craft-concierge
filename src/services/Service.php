@@ -14,9 +14,15 @@ class Service extends Component
     // Public Methods
     // =========================================================================
 
-    public function sendNewUserRegistrationEmail(User $user): bool
+    public function sendNewUserRegistrationEmail(): bool
     {
-        return $this->sendEmail($user, 'concierge_moderator_registration');
+        $settings = Concierge::$plugin->getSettings();
+
+        foreach ($settings->getModerators() as $user) {
+            $this->sendEmail($user, 'concierge_moderator_registration');
+        }
+
+        return true;
     }
 
     public function sendActivatedUserEmail(User $user): bool
