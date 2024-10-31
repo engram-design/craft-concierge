@@ -55,7 +55,7 @@ class Settings extends Model
     {
         if ($this->moderatorUserGroup) {
             if ($groupId = Db::idByUid(Table::USERGROUPS, $this->moderatorUserGroup)) {
-                return User::find()->groupId($groupId)->ids();
+                return User::find()->groupId($groupId)->all();
             }
         }
 

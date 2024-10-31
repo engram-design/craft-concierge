@@ -91,7 +91,7 @@ class Concierge extends Plugin
         Event::on(User::class, User::EVENT_AFTER_SAVE, function(ModelEvent $event) {
             if ($event->isNew) {
                 if ($this->getSettings()->getModeratorRegistrationEmailEnabled()) {
-                    Concierge::$plugin->getService()->sendNewUserRegistrationEmail($event->sender);
+                    Concierge::$plugin->getService()->sendNewUserRegistrationEmail();
                 }
             }
         });
