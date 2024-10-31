@@ -1,191 +1,126 @@
 <?php
+namespace verbb\concierge;
 
-namespace olivierbon\concierge;
+use verbb\concierge\base\PluginTrait;
+use verbb\concierge\models\Settings;
+use verbb\concierge\variables\ConciergeVariable;
 
 use Craft;
-use craft\events\PluginEvent;
-use craft\events\RegisterComponentTypesEvent;
+use craft\base\Plugin;
+use craft\elements\User;
+use craft\events\ModelEvent;
 use craft\events\RegisterEmailMessagesEvent;
-use craft\services\Dashboard;
-use craft\services\Elements;
-use craft\services\Plugins;
+use craft\events\RegisterUrlRulesEvent;
+use craft\events\UserEvent;
+use craft\helpers\UrlHelper;
 use craft\services\SystemMessages;
 use craft\services\Users;
-use craft\web\Request;
-use olivierbon\concierge\models\Settings;
+use craft\web\twig\variables\CraftVariable;
+use craft\web\UrlManager;
+
 use yii\base\Event;
 
-/**
- * Concierge Class 
- *
- * @author    Olivier Bon
- * @package   Concierge
- * @since     2.0.0
- *
- */
-class Concierge extends \craft\base\Plugin
+class Concierge extends Plugin
 {
-    // Static Properties
+    // Properties
     // =========================================================================
 
-    /**
-     * @var Concierge
-     */
-    public static $plugin;
+    public bool $hasCpSettings = true;
+    public string $schemaVersion = '1.0.0';
+
+
+    // Traits
+    // =========================================================================
+
+    use PluginTrait;
+
 
     // Public Methods
     // =========================================================================
 
-    /**
-     * @inheritdoc
-     */
-    public $hasCpSettings = true;
-
-    /**
-     * @inheritdoc
-     */
-    public $hasCpSection = true;
-
-
-    public function init()
+    public function init(): void
     {
         parent::init();
 
-        // Registers the ConciergeMailer service so it's available
-        $this->setComponents([
-            'mailer' => \olivierbon\concierge\services\ConciergeMailer::class,
-        ]);
+        self::$plugin = $this;
 
-        // Registers the Concierge Status Widget
-        self::registerConciergeStatusWidget();
+        $this->_setPluginComponents();
+        $this->_setLogging();
+        $this->_registerVariables();
+        $this->_registerCraftEventListeners();
+        $this->_registerEmailMessages();
 
-        // Registers the Concierge Message
-        self::registerConciergeMessages();
-
-        // Avoids triggering Concierge when users are created in the CP
-        if (Craft::$app->user->getIsGuest()) {
-            // Listens for EVENT_AFTER_SAVE_ELEMENT and element instanceof User
-            self::newUserElementIsSaved();
+        if (Craft::$app->getRequest()->getIsCpRequest()) {
+            $this->_registerCpRoutes();
         }
-
-        // Listens for EVENT_AFTER_UNSUSPEND_USER
-        self::userIsUnsuspended();
     }
+
+    public function getSettingsResponse(): mixed
+    {
+        return Craft::$app->getResponse()->redirect(UrlHelper::cpUrl('concierge/settings'));
+    }
+
 
     // Protected Methods
     // =========================================================================
 
-    /**
-     * @inheritdoc
-     */
     protected function createSettingsModel(): Settings
     {
         return new Settings();
     }
 
-    /**
-     * @inheritdoc
-     */
-    protected function settingsHtml(): string
-    {
-        // Get and pre-validate the settings
-        $settings = $this->getSettings();
-        $settings->validate();
 
-        return \Craft::$app->getView()->renderTemplate('concierge/settings', [
-            'settings' => $settings
-        ]);
+    // Private Methods
+    // =========================================================================
+
+    private function _registerCpRoutes(): void
+    {
+        Event::on(UrlManager::class, UrlManager::EVENT_REGISTER_CP_URL_RULES, function(RegisterUrlRulesEvent $event) {
+            $event->rules['concierge'] = 'concierge/plugin/settings';
+            $event->rules['concierge/settings'] = 'concierge/plugin/settings';
+        });
     }
 
-    /**
-     * Registers the moderation & notification messages Concierge needs
-     */
-    protected static function registerConciergeMessages()
+    private function _registerVariables(): void
     {
-        Event::on(
-            SystemMessages::class, 
-            SystemMessages::EVENT_REGISTER_MESSAGES, 
-            function(RegisterEmailMessagesEvent $event) {
-                $event->messages[] = [
-                    'key' => 'concierge_moderation',
-                    'heading' => Craft::t('concierge', 'concierge_moderation_heading'),
-                    'subject' => Craft::t('concierge', 'concierge_moderation_subject'),
-                    'body' => Craft::t('concierge', 'concierge_moderation_body')
-                ];
-
-                $event->messages[] = [
-                    'key' => 'concierge_activated',
-                    'heading' => Craft::t('concierge', 'concierge_activated_heading'),
-                    'subject' => Craft::t('concierge', 'concierge_activated_subject'),
-                    'body' => Craft::t('concierge', 'concierge_activated_body')
-                ];
-
-                $event->messages[] = [
-                    'key' => 'concierge_mod_notification',
-                    'heading' => Craft::t('concierge', 'concierge_mod_notification_heading'),
-                    'subject' => Craft::t('concierge', 'concierge_mod_notification_subject'),
-                    'body' => Craft::t('concierge', 'concierge_mod_notification_body')
-                ];
-            }
-        );
+        Event::on(CraftVariable::class, CraftVariable::EVENT_INIT, function(Event $event) {
+            $event->sender->set('concierge', ConciergeVariable::class);
+        });
     }
 
-    /**
-     * Registers the Concierge Status Widget
-     */
-    protected static function registerConciergeStatusWidget()
+    private function _registerCraftEventListeners(): void
     {
-        Event::on(
-            Dashboard::class,
-            Dashboard::EVENT_REGISTER_WIDGET_TYPES,
-            function (RegisterComponentTypesEvent $event) {
-                $event->types[] = \olivierbon\concierge\widgets\ConciergeStatus::class;
-            }
-        );
-    }
-
-    /**
-     * Listens for a new element to be saved then checks it's an instance of \craft\elements\User
-     */
-    protected function newUserElementIsSaved()
-    {
-        Event::on(
-            Elements::class, 
-            Elements::EVENT_AFTER_SAVE_ELEMENT,
-            function(Event $event) {
-                if ($event->element instanceof \craft\elements\User) {
-                    $user = $event->element;
-                    $isNew = $event->isNew;
-
-                    // If it's a new user, suspend the user and issue enabled messages 
-                    if($isNew) {
-                        Craft::$app->users->suspendUser($user);
-                        if ($this->settings->concierge_moderation_enabled) {
-                            Concierge::getInstance()->mailer->sendAwaitingModerationEmail($user);
-                        }
-
-                        if($this->settings->concierge_mod_notification_enabled) {
-                            Concierge::getInstance()->mailer->sendNewUserRegistrationEmail();
-                        }
-                    }
+        Event::on(User::class, User::EVENT_AFTER_SAVE, function(ModelEvent $event) {
+            if ($event->isNew) {
+                if ($this->getSettings()->getModeratorRegistrationEmailEnabled()) {
+                    Concierge::$plugin->getService()->sendNewUserRegistrationEmail($event->sender);
                 }
             }
-        );
+        });
+
+        Event::on(Users::class, Users::EVENT_AFTER_ACTIVATE_USER, function(UserEvent $event) {
+            if ($this->getSettings()->getAccountActivationEmailEnabled()) {
+                Concierge::$plugin->getService()->sendActivatedUserEmail($event->user);
+            }
+        });
     }
 
-    /**
-     * Listens for a user to be unsuspended and issue messages if enabled  
-     */
-    protected function userIsUnsuspended()
+    private function _registerEmailMessages(): void
     {
-        Event::on(
-            Users::class,
-            Users::EVENT_AFTER_UNSUSPEND_USER,
-            function(Event $event) {
-                if ($this->settings->concierge_activated_enabled) {
-                    Concierge::getInstance()->mailer->sendUserUnsuspendedEmail($event->user);
-                }
-            }
-        ); 
+        Event::on(SystemMessages::class, SystemMessages::EVENT_REGISTER_MESSAGES, function(RegisterEmailMessagesEvent $event) {
+            $event->messages[] = [
+                'key' => 'concierge_user_activated',
+                'heading' => Craft::t('concierge', 'concierge_user_activated_heading'),
+                'subject' => Craft::t('concierge', 'concierge_user_activated_subject'),
+                'body' => Craft::t('concierge', 'concierge_user_activated_body'),
+            ];
+
+            $event->messages[] = [
+                'key' => 'concierge_moderator_registration',
+                'heading' => Craft::t('concierge', 'concierge_moderator_registration_heading'),
+                'subject' => Craft::t('concierge', 'concierge_moderator_registration_subject'),
+                'body' => Craft::t('concierge', 'concierge_moderator_registration_body'),
+            ];
+        });
     }
 }

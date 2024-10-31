@@ -1,41 +1,47 @@
 {
-    "name": "olivierbon/craft-concierge",
-    "description": "Simple user moderation plugin for Craft",
+    "name": "verbb/concierge",
+    "description": "Email notifications for user registration.",
     "type": "craft-plugin",
-    "version": "2.1.0",
+    "version": "3.0.0",
     "keywords": [
         "craft",
         "cms",
         "craftcms",
         "craft-plugin",
-        "concierge",
-        "moderation",
-        "users"
+        "concierge"
     ],
     "support": {
-        "docs": "http://concierge.olivierbon.com/documentation/",
-        "issues": "http://concierge.olivierbon.com"
+        "email": "support@verbb.io",
+        "issues": "https://github.com/verbb/concierge/issues?state=open",
+        "source": "https://github.com/verbb/concierge",
+        "docs": "https://github.com/verbb/concierge",
+        "rss": "https://github.com/verbb/concierge/commits/v2.atom"
     },
-    "license": "proprietary",
+    "license": "MIT",
     "authors": [
         {
+            "name": "Verbb",
+            "homepage": "https://verbb.io"
+        },
+        {
             "name": "Olivier Bon",
-            "homepage": "http://olivierbon.com",
-            "email": "help@olivierbon.com"
+            "homepage": "https://github.com/olivierbon"
         }
     ],
     "require": {
-        "php": ">=7.0.0",
-        "craftcms/cms": "^3.0.0-RC1"
+        "php": "^8.0.2",
+        "craftcms/cms": "^4.0.0",
+        "verbb/base": "^2.0.0"
     },
     "autoload": {
         "psr-4": {
-          "olivierbon\\concierge\\": "src/"
+            "verbb\\concierge\\": "src/"
         }
     },
     "extra": {
         "name": "Concierge",
         "handle": "concierge",
-        "class": "olivierbon\\concierge\\Concierge"
+        "changelogUrl": "https://raw.githubusercontent.com/verbb/concierge/craft-4/CHANGELOG.md",
+        "class": "verbb\\concierge\\Concierge"
     }
 }

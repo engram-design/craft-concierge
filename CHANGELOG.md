@@ -1,7 +1,15 @@
-# Release Notes for Concierge 2.x
+# Changelog
 
-## Unreleased
-- Fixed a typo ([#6](https://github.com/olivierbon/craft-concierge/issues/6) & [#10](https://github.com/olivierbon/craft-concierge/pull/10))
+## 3.0.0 - 2024-10-31
+> {note} The plugin’s package name has changed to `verbb/concierge`. Squeeze will need be updated to 3.0 from a terminal, by running `composer require verbb/concierge && composer remove olivierbon/craft-concierge`.
+
+### Changed
+- Migration to `verbb/concierge`.
+- Now requires Craft 4.0+.
+
+## Removed
+- Removed the ability to moderate users and deactivate by default. Use Craft‘s own **Settings** → **Users** → **Settings** → **Deactivate users by default** to achieve the same feature.
+- Removed the Control Panel page for the plugin (no longer needed). Use a Custom Element Source for the User element to achieve the same feature of "Awaiting activation" users.
 
 ## 2.1.1 - 2019-01-20
 - Changed icon color to match Crat CP.

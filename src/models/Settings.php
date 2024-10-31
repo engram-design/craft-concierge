@@ -1,66 +1,65 @@
 <?php
-
-namespace olivierbon\concierge\models;
+namespace verbb\concierge\models;
 
 use craft\base\Model;
+use craft\db\Table;
+use craft\elements\User;
+use craft\helpers\App;
+use craft\helpers\ArrayHelper;
+use craft\helpers\Db;
 
-/**
- * Concierge Plugin Settings 
- *
- * @author    Olivier Bon
- * @package   Concierge
- * @since     2.0.0
- *
- */
 class Settings extends Model
 {
-    /**
-    * @var bool
-    */
-    public $concierge_moderation_enabled = false;
+    // Properties
+    // =========================================================================
 
-   /**
-    * @var bool
-    */
-    public $concierge_activated_enabled = false;
+    public bool $accountActivationEmailEnabled = false;
+    public bool $moderatorRegistrationEmailEnabled = false;
+    public ?string $moderatorUserGroup = null;
 
-    /**
-     * @var bool
-     */
-    public $concierge_mod_notification_enabled = false;
 
-    /**
-     * @var string|null
-     */
-    public $moderatorEmail;
+    // Public Methods
+    // =========================================================================
 
-    public function init()
+    public function __construct($config = [])
     {
-        parent::init();
+        // Handle legacy settings
+        unset($config['concierge_moderation_enabled'], $config['moderatorEmail']);
 
-        if ($this->concierge_moderation_enabled === null) {
-            $this->concierge_moderation_enabled = false;
+        if ($oldClientId = ArrayHelper::remove($config, 'concierge_moderation_enabled')) {
+            $config['moderationEnabled'] = $oldClientId;
+        }
+        
+        if ($oldClientId = ArrayHelper::remove($config, 'concierge_activated_enabled')) {
+            $config['accountActivationEmailEnabled'] = $oldClientId;
+        }
+        
+        if ($oldClientId = ArrayHelper::remove($config, 'concierge_mod_notification_enabled')) {
+            $config['moderatorRegistrationEmailEnabled'] = $oldClientId;
         }
 
-        if ($this->concierge_activated_enabled === null) {
-            $this->concierge_activated_enabled = false;
-        }
-
-        if ($this->concierge_mod_notification_enabled === null) {
-            $this->concierge_mod_notification_enabled = false;
-        }
+        parent::__construct($config);
     }
 
-    public function rules()
+    public function getAccountActivationEmailEnabled(): bool
     {
-        return [
-
-            [['concierge_moderation_enabled',
-              'concierge_activated_enabled',
-              'concierge_mod_notification_enabled'],
-            'boolean'],
-
-            ['moderatorEmail', 'email']
-        ];
+        return App::parseBooleanEnv($this->accountActivationEmailEnabled);
     }
+
+    public function getModeratorRegistrationEmailEnabled(): bool
+    {
+        return App::parseBooleanEnv($this->moderatorRegistrationEmailEnabled);
+    }
+
+    public function getModerators(): array
+    {
+        if ($this->moderatorUserGroup) {
+            if ($groupId = Db::idByUid(Table::USERGROUPS, $this->moderatorUserGroup)) {
+                return User::find()->groupId($groupId)->ids();
+            }
+        }
+
+        return [];
+    }
+
 }
